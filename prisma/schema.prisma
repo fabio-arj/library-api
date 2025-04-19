@@ -1,0 +1,85 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  name          String
+  email         String   @unique
+  password_hash String
+  role          Role     @default(CLIENTE)
+  created_at    DateTime @default(now())
+
+  loans        Loan[]
+  fines        Fine[]
+  activityLogs ActivityLog[]
+}
+
+enum Role {
+  BIBLIOTECARIO
+  CLIENTE
+}
+
+model Book {
+  id               Int      @id @default(autoincrement())
+  title            String
+  author           String
+  published_year   Int
+  genre            String
+  total_copies     Int
+  available_copies Int
+  created_at       DateTime @default(now())
+  loan             Loan[]
+}
+
+model Loan {
+  id          Int        @id @default(autoincrement())
+  user        User       @relation(fields: [userId], references: [id])
+  userId      Int
+  Book        Book       @relation(fields: [bookId], references: [id])
+  bookId      Int
+  loan_date   DateTime   @default(now())
+  due_date    DateTime
+  return_date DateTime?
+  status      LoanStatus @default(EMPRESTADO)
+
+  fine Fine?
+}
+
+enum LoanStatus {
+  EMPRESTADO
+  DEVOLVIDO
+  ATRASADO
+}
+
+model Fine {
+  id         Int      @id @default(autoincrement())
+  user       User     @relation(fields: [userId], references: [id])
+  userId     Int
+  loan       Loan     @relation(fields: [loanId], references: [id])
+  loanId     Int      @unique
+  amount     Decimal  @db.Decimal(10, 2)
+  paid       Boolean  @default(false)
+  created_at DateTime @default(now())
+}
+
+model ActivityLog {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  action    String
+  timestamp DateTime @default(now())
+}
