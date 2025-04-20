@@ -4,10 +4,13 @@ import { NextRequest, NextResponse } from "next/server";
 const prisma = new PrismaClient();
 
 export async function GET() {
-  const loans = await prisma.loan.findMany();
-  return NextResponse.json(loans);
-}
-
-export async function POST(req: NextRequest) {
-  //TODO
+  try {
+    const loans = await prisma.loan.findMany();
+    return Response.json(loans);
+  } catch (error) {
+    return NextResponse.json(
+      { message: "Error getting loans", error },
+      { status: 500 }
+    );
+  }
 }
