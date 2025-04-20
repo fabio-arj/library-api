@@ -3,7 +3,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 const prisma = new PrismaClient();
 
-export async function GET({ params }: { params: Promise<{ id: number }> }) {
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ id: number }> }
+) {
   const { id } = await params;
 
   if (!id) {
@@ -56,7 +59,7 @@ export async function PUT(
     }
     await prisma.book.update({
       where: {
-        id: id,
+        id: Number(id),
       },
       data: {
         title: title,
@@ -77,7 +80,10 @@ export async function PUT(
   }
 }
 
-export async function DELETE({ params }: { params: Promise<{ id: number }> }) {
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ id: number }> }
+) {
   try {
     const { id } = await params;
 
@@ -90,7 +96,7 @@ export async function DELETE({ params }: { params: Promise<{ id: number }> }) {
 
     await prisma.book.delete({
       where: {
-        id: id,
+        id: Number(id),
       },
     });
     return NextResponse.json({ message: "Book deleted!" }, { status: 200 });
