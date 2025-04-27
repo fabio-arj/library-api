@@ -14,3 +14,32 @@ export async function GET() {
     );
   }
 }
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const { userId, bookId, dueDate } = body;
+
+    if (!userId || !bookId || !dueDate) {
+      return NextResponse.json(
+        { message: "Empty mandatory fields" },
+        { status: 400 }
+      );
+    }
+
+    await prisma.loan.create({
+      data: {
+        userId: userId,
+        bookId: bookId,
+        due_date: dueDate,
+      },
+    });
+
+    return NextResponse.json("Loan create!", { status: 201 });
+  } catch (error) {
+    return NextResponse.json(
+      { message: "Error creating loan", error },
+      { status: 500 }
+    );
+  }
+}

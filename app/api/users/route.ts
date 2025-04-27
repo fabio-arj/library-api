@@ -38,19 +38,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-
-export async function DELETE() {
-  try {
-    await prisma.user.deleteMany({
-      where: {
-        role: "CLIENTE",
-      },
-    });
-    return NextResponse.json("Users deleted!", { status: 200 });
-  } catch (error) {
-    return NextResponse.json(
-      { message: "Error deleting users", error },
-      { status: 500 }
-    );
-  }
-}

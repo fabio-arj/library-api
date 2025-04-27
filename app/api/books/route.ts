@@ -46,15 +46,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-
-export async function DELETE() {
-  try {
-    await prisma.book.deleteMany();
-    return NextResponse.json("Books deleted!", { status: 200 });
-  } catch (error) {
-    return NextResponse.json(
-      { message: "Error deleting books", error },
-      { status: 500 }
-    );
-  }
-}
