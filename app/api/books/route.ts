@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { assertRole, getCurrentSession } from "@/lib/session";
 
 export async function GET() {
+  const { user } = await getCurrentSession();
+  assertRole(user, ["BIBLIOTECARIO"]);
+
   try {
     const books = await prisma.book.findMany();
     return Response.json(books, { status: 200 });
@@ -14,17 +18,20 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const {
-      title,
-      author,
-      published_year,
-      genre,
-      total_copies,
-      available_copies,
-    } = body;
+  const { user } = await getCurrentSession();
+  assertRole(user, ["BIBLIOTECARIO"]);
 
+  const body = await req.json();
+  const {
+    title,
+    author,
+    published_year,
+    genre,
+    total_copies,
+    available_copies,
+  } = body;
+
+  try {
     await prisma.book.create({
       data: {
         title: title,

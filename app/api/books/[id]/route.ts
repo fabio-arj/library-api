@@ -1,60 +1,71 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { assertRole, getCurrentSession } from "@/lib/session";
 
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: number }> }
 ) {
+  const { user } = await getCurrentSession();
+  assertRole(user, ["BIBLIOTECARIO"]);
+
   const { id } = await params;
 
   if (!id) {
     return NextResponse.json({ message: "Book ID not found" }, { status: 400 });
   }
 
-  const book = await prisma.book.findUnique({
-    where: {
-      id: Number(id),
-    },
-  });
-  return NextResponse.json(book, { status: 200 });
+  try {
+    const book = await prisma.book.findUnique({
+      where: {
+        id: Number(id),
+      },
+    });
+    return NextResponse.json(book, { status: 200 });
+  } catch (error) {
+    return NextResponse.json(
+      { message: "Error getting book", error },
+      { status: 500 }
+    );
+  }
 }
 
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: number }> }
 ) {
+  const { user } = await getCurrentSession();
+  assertRole(user, ["BIBLIOTECARIO"]);
+
+  const { id } = await params;
+  const body = await req.json();
+  const {
+    title,
+    author,
+    published_year,
+    genre,
+    total_copies,
+    available_copies,
+  } = body;
+
+  if (!id) {
+    return NextResponse.json({ message: "User ID not found" }, { status: 400 });
+  }
+
+  if (
+    !title ||
+    !author ||
+    !published_year ||
+    !genre ||
+    !total_copies ||
+    !available_copies
+  ) {
+    return NextResponse.json(
+      { message: "Empty mandatory fields" },
+      { status: 400 }
+    );
+  }
   try {
-    const { id } = await params;
-    const body = await req.json();
-    const {
-      title,
-      author,
-      published_year,
-      genre,
-      total_copies,
-      available_copies,
-    } = body;
-
-    if (!id) {
-      return NextResponse.json(
-        { message: "User ID not found" },
-        { status: 400 }
-      );
-    }
-
-    if (
-      !title ||
-      !author ||
-      !published_year ||
-      !genre ||
-      !total_copies ||
-      !available_copies
-    ) {
-      return NextResponse.json(
-        { message: "Empty mandatory fields" },
-        { status: 400 }
-      );
-    }
     await prisma.book.update({
       where: {
         id: Number(id),
@@ -82,16 +93,15 @@ export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: number }> }
 ) {
+  const { user } = await getCurrentSession();
+  assertRole(user, ["BIBLIOTECARIO"]);
+
+  const { id } = await params;
+
+  if (!id) {
+    return NextResponse.json({ message: "Book ID not found" }, { status: 400 });
+  }
   try {
-    const { id } = await params;
-
-    if (!id) {
-      return NextResponse.json(
-        { message: "Book ID not found" },
-        { status: 400 }
-      );
-    }
-
     await prisma.book.delete({
       where: {
         id: Number(id),

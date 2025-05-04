@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { assertRole, getCurrentSession } from "@/lib/session";
 
 export async function GET() {
+  const { user } = await getCurrentSession();
+  assertRole(user, ["BIBLIOTECARIO"]);
+
   try {
     const loans = await prisma.loan.findMany();
     return Response.json(loans);
@@ -14,17 +18,20 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  const { user } = await getCurrentSession();
+  assertRole(user, ["BIBLIOTECARIO"]);
+
+  const body = await req.json();
+  const { userId, bookId, dueDate } = body;
+
+  if (!userId || !bookId || !dueDate) {
+    return NextResponse.json(
+      { message: "Empty mandatory fields" },
+      { status: 400 }
+    );
+  }
+
   try {
-    const body = await req.json();
-    const { userId, bookId, dueDate } = body;
-
-    if (!userId || !bookId || !dueDate) {
-      return NextResponse.json(
-        { message: "Empty mandatory fields" },
-        { status: 400 }
-      );
-    }
-
     await prisma.loan.create({
       data: {
         userId: userId,

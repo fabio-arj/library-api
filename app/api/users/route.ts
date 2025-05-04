@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { assertRole, getCurrentSession } from "@/lib/session";
 
 export async function GET() {
+  const { user } = await getCurrentSession();
+  assertRole(user, ["BIBLIOTECARIO"]);
+
   try {
     const users = await prisma.user.findMany({
       where: { role: "CLIENTE" },
@@ -16,10 +20,13 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  try {
-    const body = await req.json();
-    const { name, email, password_hash } = body;
+  const body = await req.json();
+  const { name, email, password_hash } = body;
+  const { user } = await getCurrentSession();
 
+  assertRole(user, ["BIBLIOTECARIO"]);
+
+  try {
     await prisma.user.create({
       data: {
         name: name,

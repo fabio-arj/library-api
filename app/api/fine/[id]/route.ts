@@ -1,37 +1,48 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { assertRole, getCurrentSession } from "@/lib/session";
 
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: number }> }
 ) {
+  const { user } = await getCurrentSession();
+  assertRole(user, ["BIBLIOTECARIO"]);
+
   const { id } = await params;
 
   if (!id) {
     return NextResponse.json({ message: "Fine ID not found" }, { status: 400 });
   }
-
-  const fine = await prisma.fine.findUnique({
-    where: {
-      id: Number(id),
-    },
-  });
-  return NextResponse.json(fine, { status: 200 });
+  try {
+    const fine = await prisma.fine.findUnique({
+      where: {
+        id: Number(id),
+      },
+    });
+    return NextResponse.json(fine, { status: 200 });
+  } catch (error) {
+    return NextResponse.json(
+      { message: "Error getting fine" },
+      { status: 500 }
+    );
+  }
 }
 
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: number }> }
 ) {
-  try {
-    const { id } = await params;
+  const { user } = await getCurrentSession();
+  assertRole(user, ["BIBLIOTECARIO"]);
 
-    if (!id) {
-      return NextResponse.json(
-        { message: "Fine ID not found" },
-        { status: 400 }
-      );
-    }
+  const { id } = await params;
+
+  if (!id) {
+    return NextResponse.json({ message: "Fine ID not found" }, { status: 400 });
+  }
+
+  try {
     await prisma.fine.update({
       where: {
         id: Number(id),
@@ -54,16 +65,16 @@ export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: number }> }
 ) {
+  const { user } = await getCurrentSession();
+  assertRole(user, ["BIBLIOTECARIO"]);
+
+  const { id } = await params;
+
+  if (!id) {
+    return NextResponse.json({ message: "Fine ID not found" }, { status: 400 });
+  }
+
   try {
-    const { id } = await params;
-
-    if (!id) {
-      return NextResponse.json(
-        { message: "Fine ID not found" },
-        { status: 400 }
-      );
-    }
-
     await prisma.fine.delete({
       where: {
         id: Number(id),

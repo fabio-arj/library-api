@@ -4,31 +4,33 @@ import {
   createSession,
   setSessionTokenCookie,
   getCurrentSession,
+  assertRole,
 } from "@/lib/session";
 import { NextRequest, NextResponse } from "next/server";
 import argon2 from "argon2";
 
 export async function POST(req: NextRequest) {
+  const curretSession = await getCurrentSession();
+  assertRole(curretSession.user, ["BIBLIOTECARIO"]);
+
+  if (curretSession.session && curretSession.user) {
+    return NextResponse.json(
+      { message: "There's a user loged in" },
+      { status: 401 }
+    );
+  }
+
+  const body = await req.json();
+  const { email, password } = body;
+
+  if (!email || !password) {
+    return NextResponse.json(
+      { message: "Empty mandatory fields" },
+      { status: 400 }
+    );
+  }
+
   try {
-    const curretSession = await getCurrentSession();
-
-    if (curretSession.session && curretSession.user) {
-      return NextResponse.json(
-        { message: "There's a user loged in" },
-        { status: 401 }
-      );
-    }
-
-    const body = await req.json();
-    const { email, password } = body;
-
-    if (!email || !password) {
-      return NextResponse.json(
-        { message: "Empty mandatory fields" },
-        { status: 400 }
-      );
-    }
-
     const user = await prisma.user.findUnique({
       where: {
         email: email,

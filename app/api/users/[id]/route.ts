@@ -12,8 +12,10 @@ export async function GET(
   if (!id) {
     return NextResponse.json({ message: "User ID not found" }, { status: 400 });
   }
+
+  assertRole(user, ["BIBLIOTECARIO"]);
+
   try {
-    assertRole(user, ["BIBLIOTECARIO"]);
     const newUser = await prisma.user.findUnique({
       where: {
         id: Number(id),
@@ -48,8 +50,9 @@ export async function PUT(
     );
   }
 
+  assertRole(user, ["BIBLIOTECARIO"]);
+
   try {
-    assertRole(user, ["BIBLIOTECARIO"]);
     await prisma.user.update({
       where: {
         id: Number(id),
@@ -81,8 +84,9 @@ export async function DELETE(
     return NextResponse.json({ message: "User ID not found" }, { status: 400 });
   }
 
+  assertRole(user, ["BIBLIOTECARIO"]);
+
   try {
-    assertRole(user, ["BIBLIOTECARIO"]);
     await prisma.user.delete({
       where: {
         id: Number(id),
