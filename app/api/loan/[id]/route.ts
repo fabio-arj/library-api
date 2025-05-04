@@ -1,7 +1,5 @@
-import { PrismaClient } from "@/generated/prisma";
 import { NextRequest, NextResponse } from "next/server";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/db";
 
 export async function GET(
   req: Request,
@@ -12,13 +10,19 @@ export async function GET(
   if (!id) {
     return NextResponse.json({ message: "Loan ID not found" }, { status: 400 });
   }
-
-  const loan = await prisma.loan.findUnique({
-    where: {
-      id: Number(id),
-    },
-  });
-  return NextResponse.json(loan, { status: 200 });
+  try {
+    const loan = await prisma.loan.findUnique({
+      where: {
+        id: Number(id),
+      },
+    });
+    return NextResponse.json(loan, { status: 200 });
+  } catch (error) {
+    return NextResponse.json(
+      { message: "Error getting loan data", error },
+      { status: 500 }
+    );
+  }
 }
 
 export async function PUT(

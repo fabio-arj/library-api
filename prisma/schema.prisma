@@ -15,6 +15,13 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+model Session {
+  token      String   @unique
+  expires_at DateTime
+  user       User     @relation(fields: [userId], references: [id])
+  userId     Int
+}
+
 model User {
   id            Int      @id @default(autoincrement())
   name          String
@@ -26,6 +33,7 @@ model User {
   loans        Loan[]
   fines        Fine[]
   activityLogs ActivityLog[]
+  Session      Session[]
 }
 
 enum Role {

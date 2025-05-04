@@ -1,48 +1,55 @@
-import { PrismaClient } from "@/generated/prisma";
 import { NextRequest, NextResponse } from "next/server";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/db";
+import { assertRole, getCurrentSession } from "@/lib/session";
 
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: number }> }
 ) {
+  const { user } = await getCurrentSession();
   const { id } = await params;
 
   if (!id) {
     return NextResponse.json({ message: "User ID not found" }, { status: 400 });
   }
-
-  const user = await prisma.user.findUnique({
-    where: {
-      id: Number(id),
-    },
-  });
-  return NextResponse.json(user, { status: 200 });
+  try {
+    assertRole(user, ["BIBLIOTECARIO"]);
+    const newUser = await prisma.user.findUnique({
+      where: {
+        id: Number(id),
+      },
+    });
+    return NextResponse.json(newUser, { status: 200 });
+  } catch (error) {
+    return NextResponse.json(
+      { message: "Error getting user data", error },
+      { status: 500 }
+    );
+  }
 }
 
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: number }> }
 ) {
+  const { id } = await params;
+  const body = await req.json();
+  const { name, email, password_hash } = body;
+  const { user } = await getCurrentSession();
+
+  if (!id) {
+    return NextResponse.json({ message: "User ID not found" }, { status: 400 });
+  }
+
+  if (!name || !email || !password_hash) {
+    return NextResponse.json(
+      { message: "Empty mandatory fields" },
+      { status: 400 }
+    );
+  }
+
   try {
-    const { id } = await params;
-    const body = await req.json();
-    const { name, email, password_hash } = body;
-
-    if (!id) {
-      return NextResponse.json(
-        { message: "User ID not found" },
-        { status: 400 }
-      );
-    }
-
-    if (!name || !email || !password_hash) {
-      return NextResponse.json(
-        { message: "Empty mandatory fields" },
-        { status: 400 }
-      );
-    }
+    assertRole(user, ["BIBLIOTECARIO"]);
     await prisma.user.update({
       where: {
         id: Number(id),
@@ -67,16 +74,15 @@ export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: number }> }
 ) {
+  const { id } = await params;
+  const { user } = await getCurrentSession();
+
+  if (!id) {
+    return NextResponse.json({ message: "User ID not found" }, { status: 400 });
+  }
+
   try {
-    const { id } = await params;
-
-    if (!id) {
-      return NextResponse.json(
-        { message: "User ID not found" },
-        { status: 400 }
-      );
-    }
-
+    assertRole(user, ["BIBLIOTECARIO"]);
     await prisma.user.delete({
       where: {
         id: Number(id),
